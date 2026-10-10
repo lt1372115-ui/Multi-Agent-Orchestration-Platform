@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智能体中心 · Agent Hub</title>
+<style>
+  :root {
+    --bg1: #1d2027;
+    --bg2: #2b2f3a;
+    --card: #ffffff;
+    --text: #1f2329;
+    --muted: #8a919f;
+    --border: #e4e7ed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #3a4152 0%, transparent 60%),
+      linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+    min-height: 100vh;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 64px 24px;
+  }
+  .header { text-align: center; margin-bottom: 48px; }
+  .header .logo {
+    width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 20px;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff9a5c 100%);
+    display: grid; place-items: center; font-size: 30px; font-weight: 700;
+    box-shadow: 0 12px 32px rgba(255,107,53,.35);
+  }
+  .header h1 { font-size: 30px; font-weight: 700; letter-spacing: 1px; }
+  .header p { margin-top: 10px; font-size: 14px; color: #9aa3b2; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1000px;
+  }
+  .card {
+    background: var(--card); color: var(--text); border-radius: 18px;
+    padding: 28px; text-decoration: none; display: flex; flex-direction: column; gap: 14px;
+    transition: transform .18s ease, box-shadow .18s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+  .card .icon {
+    width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 24px;
+  }
+  .card .name { font-size: 19px; font-weight: 700; }
+  .card .desc { font-size: 13px; color: var(--muted); line-height: 1.7; flex: 1; }
+  .card .enter {
+    align-self: flex-start; font-size: 13px; font-weight: 600; padding: 8px 16px;
+    border-radius: 9px; background: var(--accent, #ff6b35); color: #fff;
+  }
+  .footer { margin-top: 48px; font-size: 12px; color: #6b7280; }
+</style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo">AI</div>
+    <h1>智能体中心</h1>
+    <p>选择要进入的智能体，或点击下方卡片直接开启对话</p>
+  </header>
+
+  <main class="grid">
+    <a class="card" href="/weather" style="--accent:#2f7df6;">
+      <div class="icon" style="background:#e8f1ff;color:#2f7df6;">☀</div>
+      <div class="name">天气智能体</div>
+      <div class="desc">出行简报 · 查询目的地未来十天天气格局，向随行向导询问穿衣、带伞、爬山与行程安排。</div>
+      <span class="enter">进入 →</span>
+    </a>
+
+    <a class="card" href="/dingtalk" style="--accent:#1677ff;">
+      <div class="icon" style="background:#e8f4ff;color:#1677ff;">✉</div>
+      <div class="name">钉协助手</div>
+      <div class="desc">用自然语言指挥钉钉操作：发消息、查日程、建待办，或进入操作台逐个调用钉钉接口。</div>
+      <span class="enter">进入 →</span>
+    </a>
+
+    <a class="card" href="/ecommerce" style="--accent:#ff6b35;">
+      <div class="icon" style="background:#fff0e8;color:#ff6b35;">购</div>
+      <div class="name">电商导购</div>
+      <div class="desc">带长期记忆的导购客服 · 记住你的偏好与预算，让商品推荐越来越懂你。</div>
+      <span class="enter">进入 →</span>
+    </a>
+
+    <a class="card" href="/orchestrator" style="--accent:#6a5cff;">
+      <div class="icon" style="background:#efeefe;color:#6a5cff;">编</div>
+      <div class="name">多智能体编排器</div>
+      <div class="desc">LangGraph supervisor · 一句话同时委托天气、钉钉、电商子智能体，自动汇总结果。</div>
+      <span class="enter">进入 →</span>
+    </a>
+
+    <a class="card" href="/customer_service" style="--accent:#0f9d58;">
+      <div class="icon" style="background:#e6f7ee;color:#0f9d58;">客</div>
+      <div class="name">客服智能体</div>
+      <div class="desc">订单查询、退换货申请与常见问题解答，按会话延续多轮对话记忆。</div>
+      <span class="enter">进入 →</span>
+    </a>
+
+    <a class="card" href="/analyst" style="--accent:#7c3aed;">
+      <div class="icon" style="background:#f3efff;color:#7c3aed;">析</div>
+      <div class="name">运营分析</div>
+      <div class="desc">生成运营日报，分析订单量、销售额、用户增长与转化率等核心经营指标。</div>
+      <span class="enter">进入 →</span>
+    </a>
+  </main>
+
+  <footer class="footer">FastAPI + LangGraph · 多智能体演示模板</footer>
+
+</body>
+</html>

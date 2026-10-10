@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>钉协助手智能体 · 操作台</title>
+    <meta
+      name="description"
+      content="逐个调用钉钉接口：查联系人、日程、待办、日志、考勤，或建日程、发消息、提日报。"
+    />
+    <link rel="stylesheet" href="/static/dingtalk/dingtalk.css?v=1" />
+  </head>
+  <body>
+    <a class="skip" href="#read">跳到接口列表</a>
+
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand__seal" aria-hidden="true">钉</span>
+        <div>
+          <h1 class="brand__title">钉协助手智能体</h1>
+          <p class="brand__sub">通讯录 · 日程 · 待办 · 消息 · 考勤 · 日报，一句话交给它办</p>
+        </div>
+      </div>
+      <p class="stamp" id="stamp"><span class="stamp__dot"></span>正在检查钉钉状态</p>
+    </header>
+
+    <div class="tabs__row">
+      <nav class="tabs" aria-label="页面切换">
+        <a class="tab" href="/dingtalk">助手</a>
+        <a class="tab tab--on" href="/dingtalk/console" aria-current="page">操作台</a>
+      </nav>
+    </div>
+
+    <main class="shell">
+      <section class="rail" aria-label="钉钉连接状态">
+        <span class="rail__item">
+          <span class="rail__key">命令行</span>
+          <span class="rail__val" id="railDws">检查中…</span>
+        </span>
+        <span class="rail__item">
+          <span class="rail__key">登录账号</span>
+          <span class="rail__val" id="railUser">检查中…</span>
+        </span>
+        <span class="rail__item rail__spacer">
+          <button class="button" type="button" id="railLogin">扫码登录</button>
+          <button class="button" type="button" id="railRefresh">重新检测</button>
+        </span>
+        <button class="button" type="button" id="railRawToggle" aria-expanded="false">查看登录状态原文</button>
+        <pre class="rail__raw" id="railRaw" hidden></pre>
+      </section>
+
+      <section class="board" id="read" aria-labelledby="readTitle">
+        <header class="board__head">
+          <h2 class="board__title" id="readTitle">查一查</h2>
+          <p class="board__note">只读取信息，不会改动或发给任何人</p>
+        </header>
+        <div class="cards" id="readCards"></div>
+      </section>
+
+      <section class="board" id="write" aria-labelledby="writeTitle">
+        <header class="board__head">
+          <h2 class="board__title" id="writeTitle">做一做</h2>
+          <p class="board__note board__note--write">会真的发出去，收件人会看到。每张卡片都要先勾选确认</p>
+        </header>
+        <div class="cards" id="writeCards"></div>
+      </section>
+    </main>
+
+    <aside class="drawer" id="drawer" aria-label="调用结果" hidden>
+      <div class="drawer__head">
+        <span class="drawer__verb" id="drawerVerb">GET</span>
+        <span class="drawer__path" id="drawerPath"></span>
+        <span class="drawer__meta" id="drawerMeta"></span>
+        <button class="drawer__close" type="button" id="drawerClose" aria-label="关闭结果">×</button>
+      </div>
+      <pre class="drawer__body" id="drawerBody"></pre>
+    </aside>
+
+    <script src="/static/dingtalk/common.js?v=1"></script>
+    <script src="/static/dingtalk/console.js?v=2"></script>
+  </body>
+</html>

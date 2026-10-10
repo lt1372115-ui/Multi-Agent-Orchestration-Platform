@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>钉协助手智能体 · 助手</title>
+    <meta
+      name="description"
+      content="用一句话让钉协助手查日程、待办、考勤、日志，或替你发消息、建日程、提交日报。"
+    />
+    <link rel="stylesheet" href="/static/dingtalk/dingtalk.css?v=1" />
+  </head>
+  <body>
+    <a class="skip" href="#ask">跳到提问框</a>
+
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand__seal" aria-hidden="true">钉</span>
+        <div>
+          <h1 class="brand__title">钉协助手智能体</h1>
+          <p class="brand__sub">通讯录 · 日程 · 待办 · 消息 · 考勤 · 日报，一句话交给它办</p>
+        </div>
+      </div>
+      <p class="stamp" id="stamp"><span class="stamp__dot"></span>正在检查钉钉状态</p>
+    </header>
+
+    <div class="tabs__row">
+      <nav class="tabs" aria-label="页面切换">
+        <a class="tab tab--on" href="/dingtalk" aria-current="page">助手</a>
+        <a class="tab" href="/dingtalk/console">操作台</a>
+      </nav>
+    </div>
+
+    <main class="shell">
+      <section class="panel" aria-labelledby="ledgerTitle">
+        <header class="panel__head">
+          <h2 class="panel__title" id="ledgerTitle">操作流水</h2>
+          <p class="panel__note">模型每调用一次钉钉操作，都会在这里留一条记录</p>
+        </header>
+
+        <ol class="ledger" id="ledger" aria-live="polite"></ol>
+
+        <div class="asks" id="asks"></div>
+
+        <form class="composer" id="composer">
+          <label class="sr-only" for="ask">向钉协助手提问</label>
+          <textarea
+            class="composer__input"
+            id="ask"
+            rows="2"
+            placeholder="例如：看看我今天有什么待办"
+          ></textarea>
+          <button class="button button--solid" type="submit" id="send">发送</button>
+          <p class="composer__hint">Enter 发送，Shift + Enter 换行。助手会自己决定该调哪个钉钉操作。</p>
+        </form>
+      </section>
+    </main>
+
+    <script src="/static/dingtalk/common.js?v=1"></script>
+    <script src="/static/dingtalk/assistant.js?v=1"></script>
+  </body>
+</html>

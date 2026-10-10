@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>出行简报 · 天气格局与旅行建议</title>
+    <meta
+      name="description"
+      content="查看目的地未来十天的天气格局，向 AI 随行向导询问穿衣、带伞、爬山与行程安排。"
+    />
+    <!-- 静态资源带版本号，改动前端后把 v 加一即可绕开浏览器缓存 -->
+    <link rel="stylesheet" href="/static/styles.css?v=2" />
+  </head>
+  <body>
+    <a class="skip-link" href="#guide">跳到随行向导</a>
+
+    <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4.2" />
+        <path
+          d="M12 2.4v2.2M12 19.4v2.2M2.4 12h2.2M19.4 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"
+        />
+      </symbol>
+      <symbol id="i-cloud-sun" viewBox="0 0 24 24">
+        <circle cx="8.4" cy="7.6" r="2.8" />
+        <path d="M8.4 2.4v1.3M2.8 7.6h1.3M4.3 3.5l.9.9" />
+        <path d="M9.8 18.6h7.8a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.6-1.2 3.4 3.4 0 0 0 .5 7.6Z" />
+      </symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24">
+        <path d="M7.4 18.4h9.2a3.6 3.6 0 0 0 .3-7.2 5 5 0 0 0-9.5-1.3 3.7 3.7 0 0 0 0 8.5Z" />
+      </symbol>
+      <symbol id="i-rain" viewBox="0 0 24 24">
+        <path d="M7.6 15.4h8.8a3.3 3.3 0 0 0 .3-6.6 4.7 4.7 0 0 0-9-1.2 3.4 3.4 0 0 0-.1 7.8Z" />
+        <path d="M9.2 18l-1.1 2.3M13 18l-1.1 2.3M16.8 18l-1.1 2.3" />
+      </symbol>
+      <symbol id="i-thunder" viewBox="0 0 24 24">
+        <path d="M7.6 15.2h8.8a3.3 3.3 0 0 0 .3-6.6 4.7 4.7 0 0 0-9-1.2 3.4 3.4 0 0 0-.1 7.8Z" />
+        <path d="M13.2 16.6l-2.6 3.3h3.1l-1.5 2.4" />
+      </symbol>
+      <symbol id="i-snow" viewBox="0 0 24 24">
+        <path d="M7.6 15.2h8.8a3.3 3.3 0 0 0 .3-6.6 4.7 4.7 0 0 0-9-1.2 3.4 3.4 0 0 0-.1 7.8Z" />
+        <circle cx="9.2" cy="19" r="1" />
+        <circle cx="13" cy="20.4" r="1" />
+        <circle cx="16.8" cy="19" r="1" />
+      </symbol>
+      <symbol id="i-fog" viewBox="0 0 24 24">
+        <path d="M8.2 14.4h8.4a3.3 3.3 0 0 0 .3-6.5 4.7 4.7 0 0 0-8.9-1.2 3.4 3.4 0 0 0 .2 7.7Z" />
+        <path d="M6 18h12M8.4 21h7.2" />
+      </symbol>
+      <symbol id="i-wind" viewBox="0 0 24 24">
+        <path d="M3.5 8.5h9.2a2.6 2.6 0 1 0-2.6-2.6M3.5 15.5h12.8a2.6 2.6 0 1 1-2.6 2.6M3.5 12h6.2" />
+      </symbol>
+    </svg>
+
+    <header class="masthead">
+      <div class="masthead__brand">
+        <span class="masthead__mark" aria-hidden="true"></span>
+        <div>
+          <h1 class="masthead__title">出行简报</h1>
+          <p class="masthead__sub">和风天气实况 · 未来十天 · AI 随行向导</p>
+        </div>
+      </div>
+      <p class="masthead__stamp" id="stamp">尚未查询</p>
+    </header>
+
+    <main class="shell">
+      <section class="lookup" aria-labelledby="lookupTitle">
+        <h2 class="lookup__title" id="lookupTitle">去哪</h2>
+        <form class="lookup__form" id="lookupForm" role="search">
+          <label class="sr-only" for="cityInput">目的地城市</label>
+          <input
+            class="lookup__input"
+            id="cityInput"
+            name="city"
+            type="search"
+            placeholder="输入城市名，例如 杭州"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="button button--solid" type="submit" id="lookupBtn">查看天气</button>
+        </form>
+        <div class="lookup__chips" id="cityChips"></div>
+      </section>
+
+      <p class="banner" id="banner" role="alert" hidden></p>
+
+      <div class="layout">
+        <section class="panel panel--weather" aria-labelledby="weatherTitle">
+          <header class="panel__head">
+            <h2 class="panel__title" id="weatherTitle">天气格局</h2>
+            <p class="panel__note" id="placeLine">未选择目的地</p>
+          </header>
+
+          <div class="hero" id="hero">
+            <p class="hero__place"><span id="heroCity">—</span><span class="hero__region" id="heroRegion"></span></p>
+            <p class="hero__line" id="heroLine">先选一个目的地，我把未来十天的天气理成一句话。</p>
+            <ul class="hero__facts" id="heroFacts"></ul>
+          </div>
+
+          <div class="readout" id="readout" hidden>
+            <div class="readout__lead">
+              <span class="readout__icon" id="nowIcon"></span>
+              <div>
+                <p class="readout__label">此刻</p>
+                <p class="readout__cond" id="nowCond">—</p>
+                <p class="readout__feels" id="nowFeels">体感 —</p>
+              </div>
+              <span class="readout__temp"><b id="nowTemp">--</b><i>°C</i></span>
+            </div>
+            <dl class="readout__grid" id="nowGrid"></dl>
+          </div>
+
+          <div class="band" id="band" hidden>
+            <div class="band__head">
+              <h3 class="band__title">未来十天</h3>
+              <p class="band__hint">点任意一天，让向导按那天的天气给建议</p>
+            </div>
+            <div class="band__plot">
+              <svg
+                class="band__svg"
+                id="bandSvg"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              ></svg>
+              <ol class="band__cols" id="bandCols"></ol>
+            </div>
+            <ol class="band__days" id="bandDays"></ol>
+          </div>
+        </section>
+
+        <section class="panel panel--guide" id="guide" aria-labelledby="guideTitle">
+          <header class="panel__head">
+            <h2 class="panel__title" id="guideTitle">随行向导</h2>
+            <p class="panel__note">会自己查天气，直接问就行</p>
+          </header>
+
+          <div class="chat" id="chatLog" aria-live="polite">
+            <div class="chat__intro">
+              <p>穿衣、带伞、爬山、哪几天适合出门，都可以问。向导拿到天气数据后再回答。</p>
+            </div>
+          </div>
+
+          <div class="prompts" id="prompts"></div>
+
+          <form class="composer" id="chatForm">
+            <label class="sr-only" for="chatInput">向随行向导提问</label>
+            <textarea
+              class="composer__input"
+              id="chatInput"
+              rows="2"
+              placeholder="例如：这周末哪天最适合爬山？"
+            ></textarea>
+            <button class="button button--solid" type="submit" id="chatBtn">发送</button>
+            <p class="composer__tip">Enter 发送，Shift + Enter 换行</p>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <footer class="colophon">
+      <p>天气数据来自和风天气（QWeather）。出行建议由大模型基于天气数据生成，仅供参考。</p>
+    </footer>
+
+    <script src="/static/app.js?v=2" defer></script>
+  </body>
+</html>

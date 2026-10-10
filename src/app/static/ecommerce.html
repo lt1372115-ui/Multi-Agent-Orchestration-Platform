@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>电商导购智能助手</title>
+<style>
+  :root {
+    --primary: #ff6b35;
+    --primary-strong: #e85a27;
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --msg-ai-bg: #f1f2f6;
+    --msg-user-bg: var(--primary);
+    --text: #1f2329;
+    --text-muted: #8a919f;
+    --border: #e4e7ed;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  /* ---- 侧边栏 ---- */
+  .sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, #2b2f3a 0%, #23262f 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 18px;
+    gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--primary); display: grid; place-items: center;
+    font-size: 22px; font-weight: 700;
+  }
+  .brand .title { font-size: 17px; font-weight: 700; line-height: 1.2; }
+  .brand .sub { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
+
+  .userbox {
+    background: rgba(255,255,255,.06);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .userbox .name { font-weight: 600; }
+  .userbox .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); display: grid; place-items: center; font-size: 14px; }
+  .logout-btn {
+    background: transparent; border: 1px solid rgba(255,255,255,.3);
+    color: #cfd6e0; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,.12); }
+
+  .alert {
+    background: rgba(255,180,60,.12); border: 1px solid rgba(255,180,60,.4);
+    color: #ffd591; border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.6;
+    display: none;
+  }
+
+  /* ---- 主聊天区 ---- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-header {
+    height: 60px; background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px; gap: 12px;
+  }
+  .chat-header .dot { width: 8px; height: 8px; border-radius: 50%; background: #23c06b; }
+  .chat-header .hint { font-size: 12px; color: var(--text-muted); }
+
+  .messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 72%; display: flex; flex-direction: column; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.ai { align-self: flex-start; align-items: flex-start; }
+  .msg .bubble {
+    padding: 11px 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--msg-user-bg); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai .bubble { background: var(--msg-ai-bg); border-bottom-left-radius: 4px; }
+  .msg .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
+  .msg.ai .caret { display: inline-block; width: 7px; animation: blink 1s steps(2) infinite; color: var(--text-muted); }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .error-bubble {
+    background: #ffecec; color: #d4380d; border: 1px solid #ffccc7;
+    border-radius: var(--radius); padding: 10px 14px; font-size: 13px; align-self: flex-start;
+  }
+
+  .composer {
+    background: var(--panel); border-top: 1px solid var(--border);
+    padding: 16px 24px; display: flex; gap: 12px; align-items: flex-end;
+  }
+  #input {
+    flex: 1; resize: none; border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 14px; font-family: inherit; line-height: 1.5;
+    min-height: 48px; max-height: 140px; outline: none;
+  }
+  #input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,53,.12); }
+  #send {
+    height: 48px; padding: 0 22px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  #send:hover { background: var(--primary-strong); }
+  #send:disabled { background: #d3d6dc; cursor: not-allowed; }
+
+  /* ---- 登录 / 注册 ---- */
+  .auth-screen {
+    position: fixed; inset: 0; z-index: 50;
+    background: linear-gradient(135deg, #2b2f3a 0%, #1d2027 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .auth-card {
+    width: 400px; background: #fff; border-radius: 16px; padding: 32px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.3);
+  }
+  .auth-card .a-title { font-size: 22px; font-weight: 700; }
+  .auth-card .a-sub { font-size: 13px; color: var(--text-muted); margin: 6px 0 20px; }
+  .tabs { display: flex; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 18px; }
+  .tab {
+    flex: 1; text-align: center; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    color: var(--text-muted); background: transparent; border: none;
+  }
+  .tab.active { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; }
+  .field input {
+    width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; outline: none;
+  }
+  .field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,53,.12); }
+  .auth-btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px;
+  }
+  .auth-btn:hover { background: var(--primary-strong); }
+  .auth-msg { margin-top: 12px; font-size: 13px; text-align: center; min-height: 18px; }
+  .auth-msg.err { color: #d4380d; }
+  .auth-msg.ok { color: #389e0d; }
+</style>
+</head>
+<body>
+
+<!-- 登录 / 注册 -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="a-title">电商导购智能助手</div>
+    <div class="a-sub">长期记忆客服 · 请先登录以开启对话</div>
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" type="button">登录</button>
+      <button class="tab" id="tabRegister" type="button">注册</button>
+    </div>
+    <div class="field">
+      <label for="username">用户名</label>
+      <input id="username" placeholder="请输入用户名" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="password">密码</label>
+      <input id="password" type="password" placeholder="登录建议密码 ≥ 6 位" autocomplete="current-password" />
+    </div>
+    <button class="auth-btn" id="authBtn">登录</button>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- 聊天主界面 -->
+<div class="app" id="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">购</div>
+      <div>
+        <div class="title">电商导购智能助手</div>
+        <div class="sub">长期记忆 · 个性化推荐</div>
+      </div>
+    </div>
+    <div class="userbox">
+      <span class="name" id="userName">用户</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="avatar" id="userAvatar">客</span>
+      </div>
+    </div>
+    <div class="alert" id="alert"></div>
+  </aside>
+
+  <section class="main">
+    <div class="chat-header">
+      <span class="dot"></span>
+      <span>导购客服在线</span>
+      <span class="hint" id="convHint"></span>
+      <div style="flex:1;"></div>
+      <button class="logout-btn" id="logoutBtn">退出登录</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <textarea id="input" placeholder="例如：帮我推荐一款 500 元以内的运动鞋…" rows="1"></textarea>
+      <button id="send" type="button">发送</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const API = "/api/v1";
+  const LS = {
+    token: "eccom_token", userId: "eccom_user_id",
+    username: "eccom_username", conversation: "eccom_conversation",
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    authScreen: $("authScreen"), app: $("app"),
+    username: $("username"), password: $("password"),
+    authBtn: $("authBtn"), authMsg: $("authMsg"),
+    tabLogin: $("tabLogin"), tabRegister: $("tabRegister"),
+    userName: $("userName"), userAvatar: $("userAvatar"),
+    alert: $("alert"), convHint: $("convHint"),
+    messages: $("messages"), input: $("input"), send: $("send"),
+    logoutBtn: $("logoutBtn"),
+  };
+
+  let authMode = "login";
+  let token = localStorage.getItem(LS.token) || "";
+  let userId = localStorage.getItem(LS.userId) || "";
+  let username = localStorage.getItem(LS.username) || "";
+
+  /* ---------------- 认证 ---------------- */
+  function switchMode(mode) {
+    authMode = mode;
+    el.tabLogin.classList.toggle("active", mode === "login");
+    el.tabRegister.classList.toggle("active", mode === "register");
+    el.authBtn.textContent = mode === "login" ? "登录" : "注册";
+    el.authMsg.textContent = "";
+  }
+
+  el.tabLogin.addEventListener("click", () => switchMode("login"));
+  el.tabRegister.addEventListener("click", () => switchMode("register"));
+
+  async function authenticate() {
+    const usernameVal = el.username.value.trim();
+    const passwordVal = el.password.value;
+    if (!usernameVal || passwordVal.length < (authMode === "login" ? 1 : 6)) {
+      showAuthMsg("用户名不能为空，密码" + (authMode === "login" ? "不能为空" : "至少 6 位"), true);
+      return;
+    }
+    el.authBtn.disabled = true;
+    el.authMsg.textContent = authMode === "login" ? "登录中…" : "注册中…";
+    try {
+      const resp = await fetch(`${API}/auth/${authMode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usernameVal, password: passwordVal }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "认证失败");
+      token = data.access_token;
+      userId = String(data.user_id);
+      username = usernameVal;
+      localStorage.setItem(LS.token, token);
+      localStorage.setItem(LS.userId, userId);
+      localStorage.setItem(LS.username, username);
+      enterChat();
+    } catch (err) {
+      showAuthMsg(err.message, true);
+    } finally {
+      el.authBtn.disabled = false;
+    }
+  }
+
+  function showAuthMsg(msg, isError) {
+    el.authMsg.textContent = msg;
+    el.authMsg.className = "auth-msg " + (isError ? "err" : "ok");
+  }
+
+  el.authBtn.addEventListener("click", authenticate);
+  el.password.addEventListener("keydown", (e) => { if (e.key === "Enter") authenticate(); });
+
+  /* ---------------- 进入 / 退出聊天 ---------------- */
+  function enterChat() {
+    el.authScreen.style.display = "none";
+    el.app.style.display = "flex";
+    el.userName.textContent = username;
+    el.userAvatar.textContent = username.slice(0, 1).toUpperCase();
+    ensureConversation();
+    addSystemLine(`欢迎回来，${username}！我是电商导购助手，我会记住你的偏好，让推荐越来越懂你。`);
+  }
+
+  function logout() {
+    Object.values(LS).forEach((k) => localStorage.removeItem(k));
+    token = ""; userId = ""; username = "";
+    el.messages.innerHTML = "";
+    el.authScreen.style.display = "flex";
+    el.app.style.display = "none";
+    el.password.value = "";
+  }
+  el.logoutBtn.addEventListener("click", logout);
+
+  /* ---------------- 会话 id 管理 ---------------- */
+  function ensureConversation() {
+    let conv = localStorage.getItem(LS.conversation);
+    if (!conv) { conv = crypto.randomUUID().replace(/-/g, ""); localStorage.setItem(LS.conversation, conv); }
+    el.convHint.textContent = "会话 " + conv.slice(0, 8);
+  }
+
+  /* ---------------- 消息渲染 ---------------- */
+  function addBubble(role, text) {
+    const wrap = document.createElement("div");
+    wrap.className = "msg " + role;
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = role === "user" ? username : "导购助手";
+    wrap.appendChild(bubble);
+    wrap.appendChild(meta);
+    el.messages.appendChild(wrap);
+    return bubble;
+  }
+
+  function addSystemLine(text) {
+    const d = document.createElement("div");
+    d.style.cssText = "align-self:center;font-size:12px;color:var(--text-muted);background:var(--panel);border:1px solid var(--border);padding:6px 14px;border-radius:16px;";
+    d.textContent = text;
+    el.messages.appendChild(d);
+  }
+
+  function scrollBottom() { el.messages.scrollTop = el.messages.scrollHeight; }
+
+  /* ---------------- SSE 流式对话 ---------------- */
+  async function sendMessage() {
+    const text = el.input.value.trim();
+    if (!text || el.send.disabled) return;
+    el.input.value = "";
+    autosizeInput();
+    addBubble("user", text);
+    scrollBottom();
+
+    // 助手气泡（流式追加）
+    const aiWrap = document.createElement("div");
+    aiWrap.className = "msg ai";
+    const aiBubble = document.createElement("div");
+    aiBubble.className = "bubble";
+    aiBubble.innerHTML = '<span class="caret">▍</span>';
+    aiWrap.appendChild(aiBubble);
+    const aiMeta = document.createElement("div");
+    aiMeta.className = "meta";
+    aiMeta.textContent = "导购助手";
+    aiWrap.appendChild(aiMeta);
+    el.messages.appendChild(aiWrap);
+    scrollBottom();
+
+    el.send.disabled = true;
+    let full = "";
+    try {
+      const conversation_id = localStorage.getItem(LS.conversation) || "";
+      const resp = await fetch(`${API}/ecommerce/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify({ message: text, conversation_id }),
+      });
+
+      if (!resp.ok) {
+        // 未授权时尝试引导重新登录
+        let detail = "请求失败 (HTTP " + resp.status + ")";
+        try { detail = (await resp.json()).detail || detail; } catch (_) {}
+        throw new Error(detail);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() || "";
+        for (const chunk of chunks) {
+          const line = chunk.trim();
+          if (!line.startsWith("data:")) continue;
+          const payload = JSON.parse(line.slice(5).trim());
+          if (payload.type === "text") {
+            full += payload.text;
+            aiBubble.textContent = full + "▍";
+            scrollBottom();
+          } else if (payload.type === "error") {
+            throw new Error(payload.message || "生成出错");
+          } else if (payload.type === "conversation") {
+            localStorage.setItem(LS.conversation, payload.conversation_id);
+            el.convHint.textContent = "会话 " + payload.conversation_id.slice(0, 8);
+          }
+        }
+      }
+      aiBubble.textContent = full || "（无回答）";
+    } catch (err) {
+      aiBubble.textContent = "回答失败：" + err.message;
+      aiBubble.style.backgroundColor = "#ffecec";
+      aiBubble.style.color = "#d4380d";
+    } finally {
+      el.send.disabled = false;
+      el.input.focus();
+      scrollBottom();
+    }
+  }
+
+  el.send.addEventListener("click", sendMessage);
+
+  function autosizeInput() {
+    el.input.style.height = "auto";
+    el.input.style.height = Math.min(el.input.scrollHeight, 140) + "px";
+  }
+  el.input.addEventListener("input", autosizeInput);
+  el.input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  /* ---------------- 初始化 ---------------- */
+  function init() {
+    el.username.focus();
+    if (token && userId && username) {
+      enterChat();
+    } else {
+      el.authScreen.style.display = "flex";
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>

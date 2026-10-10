@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>多智能体编排器</title>
+<style>
+  :root {
+    --primary: #6a5cff;
+    --primary-strong: #5547ea;
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --msg-ai-bg: #f1f2f6;
+    --msg-user-bg: var(--primary);
+    --text: #1f2329;
+    --text-muted: #8a919f;
+    --border: #e4e7ed;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  /* ---- 侧边栏 ---- */
+  .sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #262a3a 0%, #1d2027 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 18px;
+    gap: 18px;
+    overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, #9a8cff 100%);
+    display: grid; place-items: center; font-size: 22px; font-weight: 700;
+  }
+  .brand .title { font-size: 17px; font-weight: 700; line-height: 1.2; }
+  .brand .sub { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
+
+  .agents-label { font-size: 12px; color: #9aa3b2; margin: 6px 2px 0; }
+  .agent-card {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px; padding: 12px 14px; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .agent-card:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22); }
+  .agent-card .a-name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .agent-card .a-name .a-ico {
+    width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-size: 13px;
+  }
+  .agent-card .a-desc { font-size: 12px; color: #aab1bf; margin-top: 6px; line-height: 1.6; }
+
+  .userbox {
+    margin-top: auto;
+    background: rgba(255,255,255,.06);
+    border-radius: 10px; padding: 12px 14px; font-size: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .userbox label { color: #9aa3b2; }
+  .userbox input {
+    width: 100%; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+    color: #fff; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none;
+  }
+  .userbox input:focus { border-color: var(--primary); }
+  .userbox .hint { color: #7c8492; line-height: 1.5; }
+
+  /* ---- 主聊天区 ---- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-header {
+    height: 60px; background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px; gap: 12px;
+  }
+  .chat-header .dot { width: 8px; height: 8px; border-radius: 50%; background: #23c06b; }
+  .chat-header .hint { font-size: 12px; color: var(--text-muted); }
+
+  .messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 76%; display: flex; flex-direction: column; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.ai { align-self: flex-start; align-items: flex-start; }
+  .msg .bubble {
+    padding: 11px 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--msg-user-bg); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai .bubble { background: var(--msg-ai-bg); border-bottom-left-radius: 4px; }
+  .msg .meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
+  .msg.ai .caret { display: inline-block; width: 7px; animation: blink 1s steps(2) infinite; color: var(--text-muted); }
+  .confirm-bar { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .confirm-label { font-size: 11px; color: var(--text-muted); }
+  .confirm-bar button { border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #fff; }
+  .confirm-ok { background: #2f54eb; }
+  .confirm-no { background: #8c8c8c; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .error-bubble {
+    background: #ffecec; color: #d4380d; border: 1px solid #ffccc7;
+    border-radius: var(--radius); padding: 10px 14px; font-size: 13px; align-self: flex-start;
+  }
+
+  .composer {
+    background: var(--panel); border-top: 1px solid var(--border);
+    padding: 16px 24px; display: flex; gap: 12px; align-items: flex-end;
+  }
+  #input {
+    flex: 1; resize: none; border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 14px; font-family: inherit; line-height: 1.5;
+    min-height: 48px; max-height: 140px; outline: none;
+  }
+  #input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(106,92,255,.12); }
+  #send {
+    height: 48px; padding: 0 22px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  #send:hover { background: var(--primary-strong); }
+  #send:disabled { background: #d3d6dc; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">编</div>
+      <div>
+        <div class="title">多智能体编排器</div>
+        <div class="sub">LangGraph supervisor</div>
+      </div>
+    </div>
+
+    <div class="agents-label">可调度的子智能体（点击填入示例）</div>
+    <div class="agent-card" data-example="杭州明天适合爬山吗？带伞还是带帽子？">
+      <div class="a-name"><span class="a-ico" style="background:#e8f1ff;color:#2f7df6;">☀</span>天气出行</div>
+      <div class="a-desc">实时天气、未来预报、穿衣与出行建议</div>
+    </div>
+    <div class="agent-card" data-example="帮我查一下明天上午的日程安排，并提醒我买把伞。">
+      <div class="a-name"><span class="a-ico" style="background:#e8f4ff;color:#1677ff;">✉</span>钉钉办公</div>
+      <div class="a-desc">通讯录、日历日程、待办、消息与 DING</div>
+    </div>
+    <div class="agent-card" data-example="推荐一款 500 元以内的运动鞋，适合跑步。">
+      <div class="a-name"><span class="a-ico" style="background:#fff0e8;color:#ff6b35;">购</span>电商导购</div>
+      <div class="a-desc">商品推荐、选品与购物问题，记住偏好</div>
+    </div>
+
+    <div class="userbox">
+      <label for="userId">用户 ID（电商导购会话隔离）</label>
+      <input id="userId" type="number" min="0" placeholder="默认 0" />
+      <span class="hint">一句话可以横跨多个能力，例如：明天去杭州出差，帮我查天气、排日程、提醒买伞。</span>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="chat-header">
+      <span class="dot"></span>
+      <span>编排器在线 · 自动路由到子智能体</span>
+      <span class="hint" id="convHint"></span>
+      <div style="flex:1;"></div>
+      <a href="/" style="font-size:12px;color:var(--text-muted);text-decoration:none;">← 返回智能体中心</a>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <textarea id="input" placeholder="例如：明天去杭州出差，帮我查天气、排日程、提醒买伞…" rows="1"></textarea>
+      <button id="send" type="button">发送</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const API = "/api/v1";
+  const LS = {
+    conversation: "orchestrator_conversation",
+    userId: "orchestrator_user_id",
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    userId: $("userId"), convHint: $("convHint"),
+    messages: $("messages"), input: $("input"), send: $("send"),
+  };
+
+  /* ---------------- 会话 id 管理 ---------------- */
+  function ensureConversation() {
+    let conv = localStorage.getItem(LS.conversation);
+    if (!conv) { conv = crypto.randomUUID().replace(/-/g, ""); localStorage.setItem(LS.conversation, conv); }
+    el.convHint.textContent = "会话 " + conv.slice(0, 8);
+    return conv;
+  }
+
+  /* ---------------- 消息渲染 ---------------- */
+  function addBubble(role, text) {
+    const wrap = document.createElement("div");
+    wrap.className = "msg " + role;
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = role === "user" ? "我" : "编排器";
+    wrap.appendChild(bubble);
+    wrap.appendChild(meta);
+    el.messages.appendChild(wrap);
+    return bubble;
+  }
+
+  function addSystemLine(text) {
+    const d = document.createElement("div");
+    d.style.cssText = "align-self:center;font-size:12px;color:var(--text-muted);background:var(--panel);border:1px solid var(--border);padding:6px 14px;border-radius:16px;";
+    d.textContent = text;
+    el.messages.appendChild(d);
+  }
+
+  function scrollBottom() { el.messages.scrollTop = el.messages.scrollHeight; }
+
+  /* ------------ 确认门禁 ------------ */
+  async function decideConfirm(confirmId, msgText, approved) {
+    const conversation_id = ensureConversation();
+    const user_id = parseInt(el.userId.value, 10) || 0;
+    const resp = await fetch(`${API}/orchestrator/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirm_id: confirmId, approved, user_id, conversation_id }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      addBubble("ai", "确认失败：" + (data.message || `HTTP ${resp.status}`));
+      return;
+    }
+    if (!approved) {
+      addBubble("ai", "操作已取消。");
+      return;
+    }
+    if (data.message) addBubble("ai", data.message);
+  }
+
+  function addConfirmActions(aiBubble, confirmId, agentName, msgText) {
+    const bar = document.createElement("div");
+    bar.className = "confirm-bar";
+    const label = document.createElement("span");
+    label.className = "confirm-label";
+    label.textContent = agentName ? `【${agentName}】` : "";
+    bar.appendChild(label);
+    const ok = document.createElement("button");
+    ok.className = "confirm-ok";
+    ok.textContent = "确认执行";
+    ok.addEventListener("click", () => {
+      bar.remove();
+      decideConfirm(confirmId, msgText, true);
+    });
+    const no = document.createElement("button");
+    no.className = "confirm-no";
+    no.textContent = "取消";
+    no.addEventListener("click", () => {
+      bar.remove();
+      decideConfirm(confirmId, msgText, false);
+    });
+    bar.appendChild(ok);
+    bar.appendChild(no);
+    aiBubble.appendChild(bar);
+  }
+
+  /* ---------------- SSE 流式对话 ---------------- */
+  async function sendMessage() {
+    const text = el.input.value.trim();
+    if (!text || el.send.disabled) return;
+    el.input.value = "";
+    autosizeInput();
+    addBubble("user", text);
+    scrollBottom();
+
+    const aiWrap = document.createElement("div");
+    aiWrap.className = "msg ai";
+    const aiBubble = document.createElement("div");
+    aiBubble.className = "bubble";
+    aiBubble.innerHTML = '<span class="caret">▍</span>';
+    aiWrap.appendChild(aiBubble);
+    const aiMeta = document.createElement("div");
+    aiMeta.className = "meta";
+    aiMeta.textContent = "编排器";
+    aiWrap.appendChild(aiMeta);
+    el.messages.appendChild(aiWrap);
+    scrollBottom();
+
+    el.send.disabled = true;
+    let full = "";
+    try {
+      const conversation_id = ensureConversation();
+      const user_id = parseInt(el.userId.value, 10) || 0;
+      const resp = await fetch(`${API}/orchestrator/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: text, user_id, conversation_id }),
+      });
+
+      if (!resp.ok) {
+        let detail = "请求失败 (HTTP " + resp.status + ")";
+        try { detail = (await resp.json()).detail || detail; } catch (_) {}
+        throw new Error(detail);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() || "";
+        for (const chunk of chunks) {
+          const line = chunk.trim();
+          if (!line.startsWith("data:")) continue;
+          const payload = JSON.parse(line.slice(5).trim());
+          if (payload.text) {
+            full += payload.text;
+            aiBubble.textContent = full + "▍";
+            scrollBottom();
+          } else if (payload.confirm_required) {
+            const c = payload.confirm_required;
+            full = ""; // 待确认，等待用户操作
+            aiBubble.textContent = "";
+            aiBubble.appendChild(document.createTextNode(c.message || "该操作需要确认"));
+            addConfirmActions(aiBubble, c.confirm_id, c.agent_name || "", text);
+            scrollBottom();
+          } else if (payload.error) {
+            throw new Error(payload.error);
+          }
+        }
+      }
+      aiBubble.textContent = full || "（无回答）";
+    } catch (err) {
+      aiBubble.textContent = "回答失败：" + err.message;
+      aiBubble.style.backgroundColor = "#ffecec";
+      aiBubble.style.color = "#d4380d";
+    } finally {
+      el.send.disabled = false;
+      el.input.focus();
+      scrollBottom();
+    }
+  }
+
+  el.send.addEventListener("click", sendMessage);
+
+  function autosizeInput() {
+    el.input.style.height = "auto";
+    el.input.style.height = Math.min(el.input.scrollHeight, 140) + "px";
+  }
+  el.input.addEventListener("input", autosizeInput);
+  el.input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  /* 点击子智能体卡片，把示例问题填入输入框 */
+  document.querySelectorAll(".agent-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      el.input.value = card.dataset.example;
+      autosizeInput();
+      el.input.focus();
+    });
+  });
+
+  /* ---------------- 初始化 ---------------- */
+  function init() {
+    const savedUserId = localStorage.getItem(LS.userId);
+    if (savedUserId) el.userId.value = savedUserId;
+    el.userId.addEventListener("change", () => localStorage.setItem(LS.userId, el.userId.value));
+    ensureConversation();
+    addSystemLine("我是多智能体编排器。你可以把任务交给天气、钉钉、电商子智能体处理——一句话可同时委托多个。");
+    el.input.focus();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

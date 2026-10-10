@@ -1,0 +1,22 @@
+# 文本文件统一使用 LF 换行：避免 Windows / macOS 混用导致整文件 diff 与
+# ruff format --check 失败（ruff 侧由 pyproject 的 [tool.ruff.format] line-ending 锁定）。
+* text=auto eol=lf
+
+# 二进制文件不做换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.docx binary
+*.pptx binary
+*.zip binary
+*.db binary
+*.so binary
+*.pyd binary
+*.pyc binary
+
+# 部署私钥等敏感文件按二进制处理，避免被工具改写
+.deploy/** binary

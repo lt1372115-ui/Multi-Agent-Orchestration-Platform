@@ -1,0 +1,179 @@
+[project]
+name = "fastapi-template"
+version = "0.1.0"
+description = "基于 FastAPI + SQLAlchemy + Pydantic v2 的异步后端开发模板，使用 uv 管理依赖，开箱即用。"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "summer", email = "1518226491@qq.com" },
+]
+keywords = ["fastapi", "sqlalchemy", "pydantic", "async", "template", "uv"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "gunicorn>=22.0.0",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
+    "redis[hiredis]>=5.0.0",
+    "arq>=0.25.0",
+    "uvloop>=0.19.0; sys_platform != 'win32'",
+    "fastcrud>=0.12.1",
+    "pyjwt>=2.8.0",
+    "python-multipart>=0.0.9",
+    "email-validator>=2.1.0",
+    "anyio>=4.0.0",
+    "psycopg2-binary>=2.9.9",
+    "pgvector>=0.5.0",
+    # LangChain / LangGraph 生态（RAG 编排、文档加载与 Agent 工作流）
+    "langchain>=1.0.0",
+    "langchain-core>=1.0.0",
+    "langchain-community>=0.4.0",
+    "langchain-openai>=1.0.0",
+    "langchain-text-splitters>=1.0.0",
+    "langgraph>=1.0.0",
+    "dashscope>=1.27.4",
+    "pymilvus>=3.0.1",
+    "fastmcp>=4.0.5",
+    "psycopg[binary,pool]>=3.3.6",
+    "psycopg-pool>=3.3.2",
+    "dingtalk-cli>=1.0.0",
+    "a2a-sdk[fastapi,sqlite]>=1.2.2",
+    "langgraph-checkpoint-postgres>=3.1.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+    "faker>=24.0.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.hatch.build.targets.wheel.sources]
+"app" = "src/app"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+# 第一方模块根：src 下是 app / mcp_servers，tests 为独立测试包
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",  # pycodestyle / pyflakes
+    "I",            # isort：导入排序与分组
+    "N",            # pep8-naming：命名规范
+    "UP",           # pyupgrade：用新语法
+    "A",            # flake8-builtins：禁止遮蔽内置名
+    "ANN",          # flake8-annotations：函数必须有类型标注
+    "ASYNC",        # flake8-async：异步正确性
+    "B",            # flake8-bugbear：常见陷阱
+    "C4",           # flake8-comprehensions
+    "DTZ",          # flake8-datetimez：禁止无时区时间
+    "ERA",          # eradicate：禁止注释掉的死代码
+    "FAST",         # fastapi：FastAPI 用法规范
+    "INP",          # flake8-no-pep420：目录须有 __init__.py
+    "LOG",          # flake8-logging
+    "PERF",         # perflint：性能反模式
+    "PGH",          # pygrep-hooks：禁止裸 noqa / 裸 type: ignore
+    "PIE",          # flake8-pie
+    "PT",           # flake8-pytest-style
+    "PTH",          # flake8-use-pathlib
+    "RET",          # flake8-return
+    "RUF",          # ruff 自有规则
+    "SIM",          # flake8-simplify
+    "T20",          # flake8-print
+    "TID",          # flake8-tidy-imports：导入风格统一
+]
+ignore = [
+    # 中文全角标点（。、「」、：）是刻意的书写规范，不是易混字符
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # 只要求「有类型标注」，不禁止 Any：第三方 SDK 与图状态大量需要 Any
+    "ANN401",
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# B008 的误报：FastAPI / FastMCP 官方推荐的依赖注入写法就是「函数调用作为参数默认值」，
+# 这些调用本身不可变且由框架缓存，不属于「每次调用都重新求值」的错误模式。
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Path",
+    "fastmcp.dependencies.Depends",
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# 统一绝对导入：跨包引用一律写 app.logs.core...，不再混用 「....config」这种相对层级
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "mcp_servers", "tests"]
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+# 脚本与本地启动器需要直接打印到控制台
+"src/run.py" = ["T201"]
+"src/scripts/*" = ["T201"]
+# Alembic 的 env.py 是自动生成的样板文件，保留其原始注释与命名空间包结构
+"src/migrations/*" = ["INP001", "ERA001"]
+
+[tool.ruff.format]
+# 显式锁定，避免 Windows 上出现 CRLF 与 LF 混用
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = [
+    # FastAPI/Starlette 的 TestClient 在上游迁移到 httpx2 之前会触发该警告，属可忽略的第三方弃用提示。
+    "ignore::DeprecationWarning:starlette",
+    "ignore::DeprecationWarning:fastapi",
+]
+
+[tool.mypy]
+python_version = "3.13"
+# 源码根是 src，代码里统一用 `app.*` 导入；显式声明包根，避免 mypy 把模块名
+# 解析成 `src.app.*` 后导致 `app.*` 导入静默退化为 Any（warn_return_any 会因此集成报错）。
+mypy_path = "src"
+explicit_package_bases = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+strict_equality = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.*", "mcp_servers.*", "tests.*"]
+disallow_untyped_defs = true

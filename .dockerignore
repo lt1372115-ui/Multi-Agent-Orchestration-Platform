@@ -1,0 +1,71 @@
+# --- VCS ---
+.git
+.gitignore
+.gitattributes
+.workbuddy
+
+# --- 部署私钥（禁止进入镜像）---
+.deploy
+
+# --- 虚拟环境与依赖缓存 ---
+.venv
+.uv-cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.installed.cfg
+
+# --- 本地配置与密钥（禁止进入镜像 / 构建上下文）---
+.env
+src/.env
+src/.env.example
+
+# --- 测试与静态检查 ---
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- 本地数据与上传/文档存储 ---
+storage/
+
+# --- 运行日志 ---
+# 注意：src/app/logs/core 是应用核心代码（config / setup / db / agents 等），
+# 整目录排除会导致镜像里 import app.logs 直接失败（ModuleNotFoundError）。
+# 这里只排除日志文件本身。
+src/app/logs/*.log
+src/app/logs/logs/
+
+# --- 已安装包 / 镜像旧文件 ---
+build/
+dist/
+lib/
+lib64/
+
+# --- 示例与部署辅助 ---
+default.conf
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# --- 文档（镜像内不需要）---
+README.md
+README-CN.md
+LICENSE.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+AGENTS.md
+
+# --- 编辑器 / 系统 ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- 容器镜像自身产物 ---
+*.log
+*.pid
